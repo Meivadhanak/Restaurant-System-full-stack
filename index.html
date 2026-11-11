@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Restaurant</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon">R</div>
+            <div>
+                <h1>Simple Restaurant</h1>
+                <p>Ordering system</p>
+            </div>
+        </div>
+        <span class="open-label"><span></span> Restaurant is open</span>
+    </header>
+
+    <main class="page">
+        <section class="welcome">
+            <div>
+                <p class="eyebrow">RESTAURANT DESK</p>
+                <h2>Good day!</h2>
+                <p>Manage your menu and keep track of today's orders.</p>
+            </div>
+            <div class="date-label" id="today-date"></div>
+        </section>
+
+        <section class="stats" aria-label="Restaurant summary">
+            <article class="stat-card">
+                <div class="stat-icon peach">🍽</div>
+                <div><p>Menu items</p><strong id="food-count">0</strong></div>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon green">🧾</div>
+                <div><p>Open orders</p><strong id="open-order-count">0</strong></div>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon blue">🪑</div>
+                <div><p>Tables in use</p><strong id="tables-in-use">0</strong></div>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon yellow">€</div>
+                <div><p>Today's sales</p><strong id="sales-total">€0.00</strong></div>
+            </article>
+        </section>
+
+        <nav class="tabs" aria-label="Main sections">
+            <button class="tab active" data-panel="orders-panel">Orders</button>
+            <button class="tab" data-panel="menu-panel">Food menu</button>
+        </nav>
+
+        <section class="panel" id="orders-panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Orders</h2>
+                    <p>Create an order, update it, or close it when it is finished.</p>
+                </div>
+                <button class="button button-primary" id="new-order-button">+ New order</button>
+            </div>
+
+            <form class="editor hidden" id="order-form">
+                <div class="editor-heading">
+                    <div><h3 id="order-form-title">New order</h3><p>Choose a table and add food to the order.</p></div>
+                    <button class="icon-button" type="button" data-cancel="order" aria-label="Cancel">×</button>
+                </div>
+                <input type="hidden" id="order-id">
+                <div class="form-grid">
+                    <label>Guest name<input id="guest-name" maxlength="60" required placeholder="e.g. Alex Smith"></label>
+                    <label>Guest contact<input id="guest-contact" maxlength="60" placeholder="Phone or email (optional)"></label>
+                    <label>Table
+                        <select id="table-number" required>
+                            <option value="1">Table 1</option><option value="2">Table 2</option>
+                            <option value="3">Table 3</option><option value="4">Table 4</option>
+                            <option value="5">Table 5</option><option value="6">Table 6</option>
+                            <option value="7">Table 7</option><option value="8">Table 8</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="items-heading"><h4>Order items</h4><button class="button button-light button-small" id="add-order-item" type="button">+ Add food</button></div>
+                <div id="order-items"></div>
+                <div class="editor-footer">
+                    <span class="total-label">Order total <strong id="order-total">€0.00</strong></span>
+                    <button class="button button-primary" type="submit">Save order</button>
+                </div>
+            </form>
+
+            <div class="orders-list" id="orders-list"></div>
+        </section>
+
+        <section class="panel hidden" id="menu-panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Food menu</h2>
+                    <p>Add, edit, or remove food items from your restaurant menu.</p>
+                </div>
+                <button class="button button-primary" id="new-food-button">+ Add food</button>
+            </div>
+
+            <form class="editor hidden" id="food-form">
+                <div class="editor-heading">
+                    <div><h3 id="food-form-title">Add food item</h3><p>Enter the food name, category, and price.</p></div>
+                    <button class="icon-button" type="button" data-cancel="food" aria-label="Cancel">×</button>
+                </div>
+                <input type="hidden" id="food-id">
+                <div class="form-grid">
+                    <label>Food name<input id="food-name" maxlength="60" required placeholder="e.g. Margherita pizza"></label>
+                    <label>Category
+                        <select id="food-category">
+                            <option>Main course</option><option>Starter</option><option>Dessert</option>
+                            <option>Drink</option><option>Other</option>
+                        </select>
+                    </label>
+                    <label>Price (€)<input id="food-price" type="number" min="0.01" max="9999" step="0.01" required placeholder="12.50"></label>
+                </div>
+                <div class="editor-footer"><span></span><button class="button button-primary" type="submit">Save food item</button></div>
+            </form>
+
+            <div class="menu-grid" id="menu-list"></div>
+        </section>
+
+        <footer>Simple Restaurant · Student project</footer>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

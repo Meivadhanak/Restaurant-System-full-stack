@@ -1,0 +1,4 @@
+target/
+restaurant.db
+restaurant.db-shm
+restaurant.db-wal
