@@ -14,9 +14,28 @@ async function apiRequest(path, method = "GET", data = null) {
     }
 
     const response = await fetch(path, options);
-    const result = await response.json();
+    const responseText = await response.text();
+    let result = null;
+
+    if (responseText.trim()) {
+        try {
+            result = JSON.parse(responseText);
+        } catch {
+            throw new Error(`The server returned invalid JSON (HTTP ${response.status}).`);
+        }
+    } else if (response.status !== 204) {
+        const guidance = response.status === 405
+            ? " Open the app through the Java server at http://localhost:8080, not a static preview server."
+            : "";
+        throw new Error(
+            `The server returned an empty response to ${method} ${path} (HTTP ${response.status}).${guidance}`
+        );
+    }
+
     if (!response.ok) {
-        throw new Error(result.error || "The server could not complete the request.");
+        throw new Error(result && result.error
+            ? result.error
+            : `The server could not complete the request (HTTP ${response.status}).`);
     }
     return result;
 }
