@@ -1,6 +1,6 @@
 # Simple Restaurant Ordering System
 
-A small restaurant website made with Java, HTML, CSS, and plain JavaScript. It is designed to be easy to run and explain for a beginner student project. MySQL stores its data in a database that you can manage with phpMyAdmin.
+A small restaurant website made with Java, HTML, CSS, and plain JavaScript. It is designed to be easy to run and explain for a beginner student project. It uses a local SQLite database by default so it can run immediately on a developer machine, while MySQL remains available as an optional environment override.
 
 ## What it can do
 
@@ -17,33 +17,33 @@ The app creates the required tables automatically when it first connects to MySQ
 
 - Java 25 or newer
 - Maven 3.6.3 or newer
-- XAMPP with MySQL/MariaDB
 - A modern web browser
+- Optional: XAMPP with MySQL/MariaDB if you want to switch the app to MySQL
 
 ## Run the application
 
-1. Install and start XAMPP, then start **MySQL** in the XAMPP Control Panel.
-2. Open phpMyAdmin at [http://localhost/phpmyadmin](http://localhost/phpmyadmin). The XAMPP database server is configured on port `3307` because another MySQL server already uses `3306`. Create a database named `restaurant_system`, or use the **Import** tab to import the project's `schema.sql` file (which creates that database and its tables).
-3. If your XAMPP MySQL user is not `root` with a blank password, set the connection variables below before starting the application.
-4. Open a terminal in the folder containing `pom.xml`.
-5. Start the server (Maven downloads the Java libraries the first time):
+1. Open a terminal in the folder containing `pom.xml`.
+2. Start the server (Maven downloads the Java libraries the first time):
 
    ```text
    mvn compile exec:java
    ```
 
-6. Open [http://localhost:8080](http://localhost:8080) in a browser.
-7. To stop the server, press `Ctrl+C` in the terminal.
+3. Open [http://localhost:8080](http://localhost:8080) in a browser.
+4. To stop the server, press `Ctrl+C` in the terminal.
 
-The app defaults to `jdbc:mysql://localhost:3307/restaurant_system` with user `root` and a blank password, as in this XAMPP setup. For another setup, configure these environment variables:
+By default, the app uses a local SQLite database file at `restaurant.db` in the project folder. This runs without extra setup and is the easiest option for local development.
 
-- `RESTAURANT_DB_URL`: JDBC URL (default: `jdbc:mysql://localhost:3307/restaurant_system?serverTimezone=UTC`)
+If you want to switch to MySQL instead, set these environment variables before starting the app:
+
+- `RESTAURANT_DB_URL`: JDBC URL (example: `jdbc:mysql://localhost:3307/restaurant_system?serverTimezone=UTC`)
 - `RESTAURANT_DB_USER`: database user (default: `root`)
 - `RESTAURANT_DB_PASSWORD`: database password (default: blank)
 
-In PowerShell, set the user and password for the current terminal before starting the app:
+In PowerShell, for example:
 
 ```powershell
+$env:RESTAURANT_DB_URL = "jdbc:mysql://localhost:3307/restaurant_system?serverTimezone=UTC"
 $env:RESTAURANT_DB_USER = "root"
 $env:RESTAURANT_DB_PASSWORD = "your MySQL password"
 mvn compile exec:java

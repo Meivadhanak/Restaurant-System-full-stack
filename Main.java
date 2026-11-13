@@ -27,7 +27,9 @@ import java.util.UUID;
 public class Main {
     private static final Path APP_FOLDER = Paths.get("").toAbsolutePath();
     private static final String DATABASE_URL = getSetting(
-            "RESTAURANT_DB_URL", "jdbc:mysql://localhost:3307/restaurant_system?serverTimezone=UTC");
+            "RESTAURANT_DB_URL",
+            "jdbc:sqlite:" + APP_FOLDER.resolve("restaurant.db").toString().replace('\\', '/'));
+    private static final boolean USE_SQLITE = DATABASE_URL.startsWith("jdbc:sqlite:");
     private static final String DATABASE_USER = getSetting("RESTAURANT_DB_USER", "root");
     private static final String DATABASE_PASSWORD = getSetting("RESTAURANT_DB_PASSWORD", "");
     private static final Gson GSON = new Gson();
@@ -47,7 +49,7 @@ public class Main {
         server.createContext("/", Main::handleRequest);
         server.start();
         System.out.println("Restaurant Ordering System is running at http://localhost:8080");
-        System.out.println("MySQL database: " + DATABASE_URL);
+        System.out.println("Database: " + DATABASE_URL);
     }
 
     private static String getSetting(String name, String defaultValue) {
@@ -59,35 +61,53 @@ public class Main {
         return DriverManager.getConnection(DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
     }
 
+    private static String autoIncrementPrimaryKeySql() {
+        return USE_SQLITE ? "INTEGER PRIMARY KEY AUTOINCREMENT" : "INT NOT NULL AUTO_INCREMENT PRIMARY KEY";
+    }
+
+    private static String bigIntegerPrimaryKeySql() {
+        return USE_SQLITE ? "INTEGER PRIMARY KEY AUTOINCREMENT" : "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY";
+    }
+
+    private static String insertOrIgnoreSql(String statement) {
+        return USE_SQLITE ? statement.replace("INSERT IGNORE INTO", "INSERT OR IGNORE INTO") : statement;
+    }
+
     private static void initializeDatabase() {
         try (Connection connection = openDatabase();
              Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS categories ("
-                    + "id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL UNIQUE) ENGINE=InnoDB");
+                    + "id " + autoIncrementPrimaryKeySql() + ", name VARCHAR(100) NOT NULL UNIQUE)"
+                    + (USE_SQLITE ? "" : " ENGINE=InnoDB"));
             statement.execute("CREATE TABLE IF NOT EXISTS restaurant_tables ("
-                    + "id INT PRIMARY KEY, name VARCHAR(50) NOT NULL UNIQUE) ENGINE=InnoDB");
+                    + "id INT PRIMARY KEY, name VARCHAR(50) NOT NULL UNIQUE)"
+                    + (USE_SQLITE ? "" : " ENGINE=InnoDB"));
             statement.execute("CREATE TABLE IF NOT EXISTS guests ("
-                    + "id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(120) NOT NULL, "
-                    + "contact VARCHAR(255)) ENGINE=InnoDB");
+                    + "id " + autoIncrementPrimaryKeySql() + ", name VARCHAR(120) NOT NULL, "
+                    + "contact VARCHAR(255))"
+                    + (USE_SQLITE ? "" : " ENGINE=InnoDB"));
             statement.execute("CREATE TABLE IF NOT EXISTS foods ("
                     + "id VARCHAR(36) PRIMARY KEY, name VARCHAR(150) NOT NULL, category_id INT NOT NULL, "
                     + "price DECIMAL(10, 2) NOT NULL CHECK(price > 0), "
-                    + "FOREIGN KEY(category_id) REFERENCES categories(id)) ENGINE=InnoDB");
+                    + "FOREIGN KEY(category_id) REFERENCES categories(id))"
+                    + (USE_SQLITE ? "" : " ENGINE=InnoDB"));
             statement.execute("CREATE TABLE IF NOT EXISTS orders ("
                     + "id VARCHAR(36) PRIMARY KEY, guest_id INT NOT NULL, table_id INT NOT NULL, "
                     + "status VARCHAR(10) NOT NULL CHECK(status IN ('open', 'closed')), created_at BIGINT NOT NULL, "
                     + "FOREIGN KEY(guest_id) REFERENCES guests(id) ON DELETE CASCADE, "
-                    + "FOREIGN KEY(table_id) REFERENCES restaurant_tables(id)) ENGINE=InnoDB");
+                    + "FOREIGN KEY(table_id) REFERENCES restaurant_tables(id))"
+                    + (USE_SQLITE ? "" : " ENGINE=InnoDB"));
             statement.execute("CREATE TABLE IF NOT EXISTS order_items ("
-                    + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, order_id VARCHAR(36) NOT NULL, "
+                    + "id " + bigIntegerPrimaryKeySql() + ", order_id VARCHAR(36) NOT NULL, "
                     + "food_id VARCHAR(36), food_name VARCHAR(150) NOT NULL, "
                     + "unit_price DECIMAL(10, 2) NOT NULL, quantity INT NOT NULL, "
                     + "FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE, "
-                    + "FOREIGN KEY(food_id) REFERENCES foods(id) ON DELETE SET NULL) ENGINE=InnoDB");
+                    + "FOREIGN KEY(food_id) REFERENCES foods(id) ON DELETE SET NULL)"
+                    + (USE_SQLITE ? "" : " ENGINE=InnoDB"));
 
             String[] categories = {"Starter", "Main course", "Dessert", "Drink", "Other"};
             try (PreparedStatement insert = connection.prepareStatement(
-                    "INSERT IGNORE INTO categories(name) VALUES (?)")) {
+                    insertOrIgnoreSql("INSERT IGNORE INTO categories(name) VALUES (?)"))) {
                 for (String category : categories) {
                     insert.setString(1, category);
                     insert.executeUpdate();
@@ -95,7 +115,7 @@ public class Main {
             }
 
             try (PreparedStatement insert = connection.prepareStatement(
-                    "INSERT IGNORE INTO restaurant_tables(id, name) VALUES (?, ?)")) {
+                    insertOrIgnoreSql("INSERT IGNORE INTO restaurant_tables(id, name) VALUES (?, ?)"))) {
                 for (int table = 1; table <= 8; table++) {
                     insert.setInt(1, table);
                     insert.setString(2, "Table " + table);
@@ -113,8 +133,8 @@ public class Main {
             }
         } catch (SQLException error) {
             throw new IllegalStateException(
-                    "Could not connect to or initialize MySQL. Start MySQL in XAMPP and check "
-                            + "RESTAURANT_DB_URL, RESTAURANT_DB_USER, and RESTAURANT_DB_PASSWORD.",
+                    "Could not connect to or initialize the database. Check RESTAURANT_DB_URL, "
+                            + "RESTAURANT_DB_USER, and RESTAURANT_DB_PASSWORD, or use the SQLite default file.",
                     error);
         }
     }
