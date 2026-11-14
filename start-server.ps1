@@ -1,4 +1,9 @@
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
+
+# Only one monitor may run at a time (the scheduled task launches this script repeatedly).
+$createdNew = $false
+$mutex = New-Object System.Threading.Mutex($true, 'Global\RestaurantSystemMonitor', [ref]$createdNew)
+if (-not $createdNew) { exit 0 }
 
 $logDirectory = Join-Path $env:LOCALAPPDATA 'RestaurantSystem'
 New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
@@ -13,7 +18,8 @@ function Test-RestaurantServer {
     try {
         $response = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/health' -TimeoutSec 3
         return $response.status -eq 'ok'
-    } catch [System.Net.WebException] {
+    } catch {
+        # Any failure (refused connection, timeout, bad response) means "not running".
         return $false
     }
 }
@@ -39,7 +45,7 @@ if (-not $mavenCommand) {
 
 if (-not $mavenCommand) {
     Write-ServerLog 'ERROR: Maven was not found. Install Maven 3.6.3 or newer.'
-    throw 'Maven was not found. Install Maven 3.6.3 or newer.'
+    exit 1
 }
 
 Set-Location -LiteralPath $PSScriptRoot
@@ -47,13 +53,14 @@ Write-ServerLog "Monitoring the restaurant server with $mavenCommand."
 
 while ($true) {
     if (Test-RestaurantServer) {
-        Start-Sleep -Seconds 10
+        Start-Sleep -Seconds 5
         continue
     }
 
     Write-ServerLog 'Server is not responding. Starting it.'
-    & $mavenCommand compile exec:java >> $logFile 2>&1
-    $exitCode = $LASTEXITCODE
-    Write-ServerLog "Maven exited with code $exitCode. Retrying in 15 seconds."
-    Start-Sleep -Seconds 15
+    # Run through cmd.exe so Maven's stderr output cannot be turned into a
+    # PowerShell error that kills this monitor.
+    cmd.exe /c "`"$mavenCommand`" -q compile exec:java >> `"$logFile`" 2>&1"
+    Write-ServerLog "Maven exited with code $LASTEXITCODE. Retrying in 5 seconds."
+    Start-Sleep -Seconds 5
 }
