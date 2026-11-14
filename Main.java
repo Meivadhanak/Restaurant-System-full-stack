@@ -199,6 +199,16 @@ public class Main {
     private static void handleApi(HttpExchange exchange, String path) throws SQLException, IOException {
         String method = exchange.getRequestMethod();
 
+        if ("/api/health".equals(path)) {
+            if (!"GET".equals(method)) {
+                throw new ApiException(405, "Method not allowed.");
+            }
+            JsonObject health = new JsonObject();
+            health.addProperty("status", "ok");
+            sendJson(exchange, 200, health);
+            return;
+        }
+
         if ("/api/foods".equals(path)) {
             if ("GET".equals(method)) {
                 sendJson(exchange, 200, getFoods());

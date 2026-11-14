@@ -30,7 +30,23 @@ The app creates the required tables automatically when it first connects to MySQ
    ```
 
 3. Open [http://localhost:8080](http://localhost:8080) in a browser.
-4. To stop the server, press `Ctrl+C` in the terminal.
+4. To stop a manually started server, press `Ctrl+C` in the terminal. If the Windows auto-start monitor is installed, it will restart the server.
+
+The server's `GET /api/health` endpoint returns `{"status":"ok"}` when the HTTP service is running.
+
+### Start automatically on Windows
+
+To keep the server running after closing VS Code and start it again at Windows sign-in, run this once from PowerShell in the project folder:
+
+```powershell
+.\setup-autostart.ps1
+```
+
+This registers a background task for the current Windows user. It keeps the server running after VS Code closes and restarts it if it stops. After a Windows restart, it starts when you sign in. Logs are written to `%LOCALAPPDATA%\RestaurantSystem\server.log`. To remove the automatic startup task, run:
+
+```powershell
+Unregister-ScheduledTask -TaskName "RestaurantSystem-LocalServer"
+```
 
 By default, the app uses a local SQLite database file at `restaurant.db` in the project folder. This runs without extra setup and is the easiest option for local development.
 
